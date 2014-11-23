@@ -1,8 +1,8 @@
 require 'digest'
 RSpec::Matchers.define :have_the_content_of do |expected|
   match do |actual|
-    puts actual.class.name.to_s
-    puts expected.class.name.to_s
+    #puts actual.class.name.to_s
+    #puts expected.class.name.to_s
     actual_content = read_content(actual)
     ta = Tempfile.new('actual_data')
     ta.write(actual_content.to_s)
@@ -11,7 +11,7 @@ RSpec::Matchers.define :have_the_content_of do |expected|
     te = Tempfile.new('actual_data')
     te.write(expected_content.to_s)
     expected_input = te.path
-    puts `diff #{actual_input} #{expected_input}`
+    #puts `diff #{actual_input} #{expected_input}`
     sha256_hash_of(actual) == sha256_hash_of(expected)
   end
   diffable

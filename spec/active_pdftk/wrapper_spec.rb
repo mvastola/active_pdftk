@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'byebug'
 
 inputs = [:path, :hash, :file, :tempfile, :stringio]
 outputs = [:path, :file, :tempfile, :stringio, :nil]
@@ -79,7 +80,6 @@ describe ActivePdftk::Wrapper do
       end
     end
 
-    after(:each) { remove_output(@call_output) }
   end
 
   inputs.each do |input_type|
@@ -101,33 +101,62 @@ describe ActivePdftk::Wrapper do
 
         describe "#fill_form" do
           it_behaves_like "a command" do
-            before(:all) { @example_expect = fixtures_path('fill_form/expect.pdf') }
-            before(:each) { @call_output = @pdftk.fill_form(@input, path_to_pdf('fill_form/spec.fdf'), :output => @output) }
+            before(:all) do
+              example_pdf = fixtures_path('fill_form/expect.pdf')
+              @example_expect = @pdftk.dump_data_fields(example_pdf)
+            end
+            before(:each) do
+              filled_pdf = @pdftk.fill_form(@input, path_to_pdf('fill_form/spec.fdf'), :output => @output)
+              @call_output = @pdftk.dump_data_fields(filled_pdf).string
+            end
           end
           it_behaves_like "a command" do
-            before(:all) { @example_expect = fixtures_path('fill_form/expect.pdf') }
-            before(:each) { @call_output = @pdftk.fill_form(@input, path_to_pdf('fill_form/spec.xfdf'), :output => @output) }
+            before(:all) do
+              example_pdf = fixtures_path('fill_form/expect.pdf')
+              @example_expect = @pdftk.dump_data_fields(example_pdf)
+            end
+            before(:each) do
+              filled_pdf = @pdftk.fill_form(@input, path_to_pdf('fill_form/spec.xfdf'), :output => @output)
+              @call_output = @pdftk.dump_data_fields(filled_pdf).string
+            end
           end
         end
 
-        describe "#generate_fdf" do
-          it_behaves_like "a command" do
-            before(:all) { @example_expect = fixtures_path('generate_fdf/expect.fdf') }
-            before(:each) { @call_output = @pdftk.generate_fdf(@input,:output => @output) }
-          end
-        end
+        # No analagous cross-platform function comes to mind
+        #describe "#generate_fdf" do
+          #it_behaves_like "a command" do
+            #before(:all) do
+              #@example_expect = fixtures_path('generate_fdf/expect.fdf') 
+            #end
+            #before(:each) do
+              #@call_output = @pdftk.generate_fdf(@input,:output => @output)
+            #end
+          #end
+        #end
 
         describe "#dump_data" do
           it_behaves_like "a command" do
-            before(:all) { @example_expect = fixtures_path('dump_data/expect.data') }
-            before(:each) { @call_output = @pdftk.dump_data(@input,:output => @output) }
+            before(:all) do 
+              @data_dump_regexp = /^InfoKey:\s(.+)\nInfoValue:\s(.+)/
+              @example_expect = File.read fixtures_path('dump_data/expect.data')
+              @example_expect = @example_expect.scan(@data_dump_regexp).map! { |i| i.join "\t" }.sort.join "\n"
+            end
+            before(:each) do
+              @data_dump_regexp = /^InfoKey:\s(.+)\nInfoValue:\s(.+)/
+              @call_output = @pdftk.dump_data(@input)
+              @call_output = @call_output.string.scan(@data_dump_regexp).map! { |i| i.join "\t" }.sort.join "\n"
+            end
           end
         end
 
         describe "#update_info" do
           it_behaves_like "a command" do
-            before(:all) { @example_expect = fixtures_path('update_info/expect.pdf') }
-            before(:each) { @call_output = @pdftk.update_info(@input, path_to_pdf('update_info/spec.data'), :output => @output) }
+            before(:all) do
+              @example_expect = fixtures_path('update_info/expect.pdf')
+            end
+            before(:each) do
+              @call_output = @pdftk.update_info(@input, path_to_pdf('update_info/spec.data'), :output => @output)
+            end
           end
         end
 
